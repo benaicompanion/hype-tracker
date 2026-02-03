@@ -20,7 +20,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     }
 
     userEmail = user.email ?? null
-    const adminEmail = process.env.ADMIN_EMAIL || ''
+    const adminEmail = (process.env.ADMIN_EMAIL || '').trim()
     isAdmin = user.email === adminEmail
   }
 
