@@ -1,7 +1,7 @@
 const API_URL = 'https://api.hyperliquid.xyz/info'
 const EVM_RPC = 'https://rpc.hyperliquid.xyz/evm'
 const HWYHPE_CONTRACT = '0x0D745EAA9E70bb8B6e2a0317f85F1d536616bD34'
-const DEFAULT_ADDRESS = '0x2246c4D51374a269423c9bd56a188b77c2473736'
+const DEFAULT_ADDRESS = '0x43112BfFEB174D3EE9117060E1F8D38F30d245A3'
 
 // ERC20 balanceOf(address) selector
 const BALANCE_OF_SELECTOR = '0x70a08231'
