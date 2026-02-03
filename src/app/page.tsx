@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AuthForm } from '@/components/auth-form'
 
+export const dynamic = 'force-dynamic'
+
 function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   return !!url && !url.includes('your-project')

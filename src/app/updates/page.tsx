@@ -1,6 +1,8 @@
 import { AppShell } from '@/components/app-shell'
 import { PostsFeed } from '@/components/posts-feed'
 
+export const dynamic = 'force-dynamic'
+
 export default function UpdatesPage() {
   return (
     <AppShell>

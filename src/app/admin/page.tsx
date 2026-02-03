@@ -3,6 +3,8 @@ import { AdminPanel } from '@/components/admin-panel'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   return !!url && !url.includes('your-project')
