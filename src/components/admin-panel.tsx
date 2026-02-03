@@ -72,10 +72,28 @@ export function AdminPanel() {
 
       if (error) throw error
 
+      // Send email notifications
+      let emailMsg = ''
+      try {
+        const notifyRes = await fetch('/api/admin/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postTitle: title }),
+        })
+        const notifyData = await notifyRes.json()
+        if (notifyData.sent > 0) {
+          emailMsg = ` · ${notifyData.sent} email${notifyData.sent > 1 ? 's' : ''} sent`
+        } else if (notifyData.message) {
+          emailMsg = ` · Emails skipped (not configured)`
+        }
+      } catch {
+        emailMsg = ' · Email notification failed'
+      }
+
       setTitle('')
       setContent('')
       setImageFile(null)
-      setMessage({ type: 'success', text: 'Post created successfully!' })
+      setMessage({ type: 'success', text: `Post published!${emailMsg}` })
       fetchPosts()
     } catch (e) {
       console.error('Error creating post:', e)
