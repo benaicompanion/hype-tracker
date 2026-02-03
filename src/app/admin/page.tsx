@@ -3,12 +3,18 @@ import { AdminPanel } from '@/components/admin-panel'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
-export default async function AdminPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  return !!url && !url.includes('your-project')
+}
 
-  if (!user || user.email !== process.env.ADMIN_EMAIL) {
-    redirect('/dashboard')
+export default async function AdminPage() {
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || user.email !== process.env.ADMIN_EMAIL) {
+      redirect('/dashboard')
+    }
   }
 
   return (
