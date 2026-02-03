@@ -21,18 +21,29 @@ function formatBtc(n: number): string {
   return formatNumber(n, 6) + ' BTC'
 }
 
+interface UserShare {
+  sharePercentage: number
+  initialInvestment: number
+}
+
 export function BalanceDashboard() {
   const [balance, setBalance] = useState<BalanceBreakdown | null>(null)
+  const [userShare, setUserShare] = useState<UserShare | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-  const fetchBalance = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch('/api/balance')
-      if (!res.ok) throw new Error('Failed to fetch')
-      const data = await res.json()
-      setBalance(data)
+      const [balRes, shareRes] = await Promise.all([
+        fetch('/api/balance'),
+        fetch('/api/user-share'),
+      ])
+      if (!balRes.ok) throw new Error('Failed to fetch balance')
+      const balData = await balRes.json()
+      const shareData = shareRes.ok ? await shareRes.json() : { sharePercentage: 0, initialInvestment: 0 }
+      setBalance(balData)
+      setUserShare(shareData)
       setLastUpdated(new Date())
       setError(null)
     } catch {
@@ -43,10 +54,10 @@ export function BalanceDashboard() {
   }, [])
 
   useEffect(() => {
-    fetchBalance()
-    const interval = setInterval(fetchBalance, 30000)
+    fetchData()
+    const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
-  }, [fetchBalance])
+  }, [fetchData])
 
   if (loading && !balance) {
     return (
@@ -79,7 +90,7 @@ export function BalanceDashboard() {
           <CardContent className="pt-6">
             <p className="text-red-400">{error}</p>
             <button
-              onClick={() => { setLoading(true); fetchBalance() }}
+              onClick={() => { setLoading(true); fetchData() }}
               className="mt-2 text-sm text-emerald-400 hover:underline"
             >
               Try again
@@ -91,6 +102,17 @@ export function BalanceDashboard() {
   }
 
   if (!balance) return null
+
+  const sharePct = userShare?.sharePercentage ?? 0
+  const initialInvestment = userShare?.initialInvestment ?? 0
+  const shareMultiplier = sharePct / 100
+
+  // Personal values
+  const myUsd = balance.totalUsd * shareMultiplier
+  const myHype = balance.totalHype * shareMultiplier
+  const myBtc = balance.totalBtc * shareMultiplier
+  const myPnl = initialInvestment > 0 ? myUsd - initialInvestment : 0
+  const myPnlPct = initialInvestment > 0 ? ((myUsd - initialInvestment) / initialInvestment) * 100 : 0
 
   const totalHypeValue = balance.totalHype * balance.hypePrice
   const allocations = [
@@ -131,7 +153,7 @@ export function BalanceDashboard() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">Portfolio Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Tracking: <code className="text-xs bg-muted px-1.5 py-0.5 rounded">0x2246...3736</code>
+            Tracking: <code className="text-xs bg-muted px-1.5 py-0.5 rounded">0x4311...45A3</code>
           </p>
         </div>
         <div className="text-right">
@@ -146,7 +168,76 @@ export function BalanceDashboard() {
         </div>
       </div>
 
-      {/* Total Value Cards */}
+      {/* Personal Portfolio Section */}
+      {sharePct > 0 && (
+        <>
+          <div className="space-y-1">
+            <h2 className="text-lg font-semibold">Your Position</h2>
+            <p className="text-xs text-muted-foreground">
+              {formatNumber(sharePct, 2)}% share · {formatUsd(initialInvestment)} invested
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Your Value
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-emerald-400">
+                  {formatUsd(myUsd)}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {formatNumber(myHype, 2)} HYPE
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Your P&L
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-3xl font-bold ${myPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {myPnl >= 0 ? '+' : ''}{formatUsd(myPnl)}
+                </div>
+                <p className={`text-sm mt-1 ${myPnlPct >= 0 ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                  {myPnlPct >= 0 ? '+' : ''}{formatNumber(myPnlPct, 2)}% return
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/40">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Your BTC Value
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">
+                  {formatBtc(myBtc)}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  @ {formatUsd(balance.btcPrice)}/BTC
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Separator />
+        </>
+      )}
+
+      {/* Fund Total Section */}
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">Fund Total</h2>
+        <p className="text-xs text-muted-foreground">Total fund value across all positions</p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
           <CardHeader className="pb-2">
@@ -203,7 +294,6 @@ export function BalanceDashboard() {
           <CardTitle className="text-lg">Allocation Breakdown</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Visual bar */}
           <div className="flex h-4 rounded-full overflow-hidden bg-muted">
             {allocations
               .filter((a) => !a.isUsdc && a.pct > 0)
@@ -218,7 +308,6 @@ export function BalanceDashboard() {
 
           <Separator />
 
-          {/* Detail rows */}
           <div className="space-y-3">
             {allocations.map((a) => (
               <div key={a.label} className="flex items-center justify-between">
