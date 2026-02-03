@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     for (const email of emails) {
       try {
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'HYPE Tracker <updates@hypetracker.fund>',
+          from: process.env.EMAIL_FROM || 'HYPE Tracker <onboarding@resend.dev>',
           to: email,
           subject: `New Update: ${postTitle}`,
           html: `
