@@ -30,6 +30,19 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
     setLoading(true)
     try {
       const supabase = createClient()
+
+      // Ensure we have an active session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        // Try refreshing the session
+        const { error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError) {
+          setError('Session expired. Please sign out and sign back in, then try again.')
+          setLoading(false)
+          return
+        }
+      }
+
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       })
